@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CPQRS Navigation</title>
+    <link rel="stylesheet" href="styles/main.css">
+</head>
+<body>
+    <div id="nav-menu">
+        <button class="nav-button" onclick="showLetter('C')">Cost</button>
+        <button class="nav-button" onclick="showLetter('P')">People</button>
+        <button class="nav-button" onclick="showLetter('Q')">Quality</button>
+        <button class="nav-button" onclick="showLetter('R')">Responsiveness</button>
+        <button class="nav-button" onclick="showLetter('S')">Safety</button>
+    </div>
+
+    <!-- New month navigation menu -->
+    <div id="month-menu">
+        <button class="month-button" data-month="1">Jan</button>
+        <button class="month-button" data-month="2">Feb</button>
+        <button class="month-button" data-month="3">Mar</button>
+        <button class="month-button" data-month="4">Apr</button>
+        <button class="month-button" data-month="5">May</button>
+        <button class="month-button" data-month="6">Jun</button>
+        <button class="month-button" data-month="7">Jul</button>
+        <button class="month-button" data-month="8">Aug</button>
+        <button class="month-button" data-month="9">Sep</button>
+        <button class="month-button" data-month="10">Oct</button>
+        <button class="month-button" data-month="11">Nov</button>
+        <button class="month-button" data-month="12">Dec</button>
+    </div>
+
+    <div id="controls">
+        <button class="color-button active" onclick="setColor('#008000')" data-color="#008000">Green</button>
+        <button class="color-button" onclick="setColor('#00b7eb')" data-color="#00b7eb">Blue</button>
+        <button class="color-button" onclick="setColor('#ff0000')" data-color="#ff0000">Red</button>
+        <button class="uncheck-button" onclick="setUncheck()">Uncheck</button>
+        <button class="reset-button" onclick="resetColors()">Reset</button>
+    </div>
+
+    <div class="layout-container">
+        <div id="stats-panel">
+            <h2>GOAL</h2>
+            <div class="stat-container">
+                <div class="stat-label">Achieved vs. Missed:</div>
+                <div id="color-ratio">0%</div>
+            </div>
+            
+            <!-- Add key section -->
+            <div class="key-section">
+                <h2>KEY</h2>
+                <div class="key-items">
+                    <div class="key-item">
+                        <span class="color-dot green"></span>
+                        <span class="key-text">Achieved</span>
+                    </div>
+                    <div class="key-item">
+                        <span class="color-dot blue"></span>
+                        <span class="key-text">Unscheduled</span>
+                    </div>
+                    <div class="key-item">
+                        <span class="color-dot red"></span>
+                        <span class="key-text">Missed</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div id="display-container">
+            <div id="C-container" class="letter-container">
+                <svg width="100%" height="100%" viewBox="0 0 600 800"></svg>
+            </div>
+            <div id="P-container" class="letter-container">
+                <svg width="100%" height="100%" viewBox="0 0 600 800"></svg>
+            </div>
+            <div id="Q-container" class="letter-container">
+                <svg width="100%" height="100%" viewBox="0 0 600 800"></svg>
+            </div>
+            <div id="R-container" class="letter-container">
+                <svg width="100%" height="100%" viewBox="0 0 600 800"></svg>
+            </div>
+            <div id="S-container" class="letter-container">
+                <svg width="100%" height="100%" viewBox="0 0 600 800"></svg>
+            </div>
+        </div>
+    </div>
+
+    <script type="module" src="js/main.js"></script>
+</body>
+</html>

@@ -1,0 +1,17 @@
+cpqrs/
+├── index.html
+├── styles/
+│   └── main.css
+└── js/
+    ├── config/
+    │   └── constants.js
+    ├── utils/
+    │   ├── storage.js
+    │   └── svgHelpers.js
+    ├── letters/
+    │   ├── letterC.js
+    │   ├── letterP.js
+    │   ├── letterQ.js
+    │   ├── letterR.js
+    │   └── letterS.js
+    └── main.js
