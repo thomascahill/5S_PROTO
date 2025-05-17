@@ -21,6 +21,7 @@ If you have Visual Studio Code:
 
 - To spin up a local server use the python command:
 - python3 -m http.server 8000
+- Enter http://localhost:8000 into the browser.
 - All data is stored in your browser's local storage
 - Each letter (C,P,Q,R,S) maintains separate states for each month
 - Colors indicate: Green (Achieved), Blue (Unscheduled), Red (Missed)

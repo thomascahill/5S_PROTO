@@ -3,89 +3,1217 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CPQRS Navigation</title>
+    <title>CPQRS & Matrix Navigation</title>
     <link rel="stylesheet" href="styles/main.css">
+    <style>
+        /* Common styles for both views */
+        .view-container {
+            display: none;
+            width: 100%;
+            height: 100%;
+        }
+
+        .view-container.active {
+            display: block;
+        }
+
+        /* Ensure body takes full height and has no margin */
+        body {
+            margin: 0;
+            min-height: 100vh;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        /* View toggle button - ensure it stays on top */
+        .view-toggle {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 10px 20px;
+            background-color: #333;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            z-index: 1000;
+        }
+
+        .view-toggle:hover {
+            background-color: #444;
+        }
+
+        /* Matrix styles */
+        .matrix-controls {
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        /* Match CPQRS button styling */
+        .matrix-color-button {
+            padding: 4px 8px;
+            margin: 0 2px;
+            font-size: 12px;
+            min-width: 60px;
+            height: 24px;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+            font-weight: bold;
+            background-color: #333;
+            color: white;
+            transition: background-color 0.2s;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            box-sizing: border-box;
+        }
+
+        /* Color button specific styles - match CPQRS exactly */
+        .matrix-color-button[data-color="green"] {
+            background-color: rgba(0, 128, 0, 0.1);
+            border: 1px solid #008000;
+        }
+
+        .matrix-color-button[data-color="blue"] {
+            background-color: rgba(0, 183, 235, 0.1);
+            border: 1px solid #00b7eb;
+        }
+
+        .matrix-color-button[data-color="red"] {
+            background-color: rgba(255, 0, 0, 0.1);
+            border: 1px solid #ff0000;
+        }
+
+        .matrix-color-button[data-color="white"] {
+            background-color: rgba(255, 255, 255, 0.1);
+            border: 1px solid #ffffff;
+            color: white;
+        }
+
+        /* Active state - match CPQRS exactly */
+        .matrix-color-button[data-color="green"].active {
+            background-color: rgba(0, 128, 0, 0.3);
+            box-shadow: 0 0 10px rgba(0, 128, 0, 0.3);
+        }
+
+        .matrix-color-button[data-color="blue"].active {
+            background-color: rgba(0, 183, 235, 0.3);
+            box-shadow: 0 0 10px rgba(0, 183, 235, 0.3);
+        }
+
+        .matrix-color-button[data-color="red"].active {
+            background-color: rgba(255, 0, 0, 0.3);
+            box-shadow: 0 0 10px rgba(255, 0, 0, 0.3);
+        }
+
+        .matrix-color-button[data-color="white"].active {
+            background-color: rgba(255, 255, 255, 0.3);
+            box-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
+            color: white;
+        }
+
+        /* Hover state - match CPQRS exactly */
+        .matrix-color-button:hover {
+            background-color: rgba(255, 255, 255, 0.2);
+        }
+
+        /* Reset button - match CPQRS exactly */
+        .matrix-reset-button {
+            padding: 4px 8px;
+            margin: 0 2px;
+            font-size: 12px;
+            min-width: 60px;
+            height: 24px;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+            font-weight: bold;
+            background-color: #ff4444;
+            color: white;
+            transition: background-color 0.2s;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            box-sizing: border-box;
+        }
+
+        .matrix-reset-button:hover {
+            background-color: #ff6666;
+        }
+
+        .matrix-container {
+            position: relative;
+            background: #1a1a1a;
+            padding: 40px 40px 20px 50px;  /* Reduced top padding from 60px to 40px */
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin: 0 auto;
+            width: fit-content;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .matrix-wrapper {
+            display: flex;
+            position: relative;
+            align-items: center;
+            margin-bottom: 30px;  /* Increased to make room for labels */
+            width: calc(40px + (31 * 30px));
+        }
+
+        /* Separate tally section from matrix */
+        .tally-section {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .tally-row {
+            display: flex;
+            align-items: center;
+            margin-top: 10px;
+            /* Update width calculation to remove gaps */
+            width: calc(40px + (31 * 30px));
+        }
+
+        .tally-cells-container {
+            display: flex;
+            margin-left: 40px;  /* Keep matrix label width */
+            gap: 0;  /* Remove gap between cells */
+        }
+
+        .tally-cell {
+            width: 30px;  /* Keep matrix cell width */
+            height: 30px;  /* Keep matrix cell height */
+            border: 1px solid #444;
+            border-right: none;  /* Remove right border except last cell */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            color: #000;
+            background-color: #ffffff;
+            box-sizing: border-box;
+            flex-shrink: 0;
+        }
+
+        /* Add right border only to last cell */
+        .tally-cell:last-child {
+            border-right: 1px solid #444;
+        }
+
+        .total-section {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-top: 10px;
+            margin-left: 0;  /* Remove gap before total */
+        }
+
+        .total-cell {
+            width: 30px;  /* Match matrix cell width */
+            height: 30px;  /* Match matrix cell height */
+            border: 1px solid #444;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            color: #000;
+            background-color: #ffffff;
+            box-sizing: border-box;  /* Include border in width/height */
+        }
+
+        .total-label {
+            text-align: center;
+            color: #fff;
+            font-size: 12px;
+            margin-top: 5px;
+        }
+
+        .matrix {
+            display: grid;
+            grid-template-columns: 40px repeat(31, 30px);
+            grid-auto-rows: 30px;
+            gap: 0;
+            position: relative;  /* For absolute positioning of labels */
+        }
+
+        .matrix-cell {
+            width: 30px;
+            height: 30px;
+            border: 1px solid #444;
+            border-right: none;  /* Remove right border except last cell in row */
+            border-bottom: none;  /* Remove bottom border except last row */
+            cursor: pointer;
+            transition: background-color 0.2s;
+            background-color: #1a1a1a;
+            box-sizing: border-box;
+        }
+
+        /* Add right border to last cell in each row */
+        .matrix-cell:nth-child(32n) {
+            border-right: 1px solid #444;
+        }
+
+        /* Add bottom border to cells in last row */
+        .matrix-cell:nth-last-child(-n+31) {
+            border-bottom: 1px solid #444;
+        }
+
+        /* Remove threshold line styles */
+        .threshold-line {
+            display: none;
+        }
+
+        /* Add style for threshold row */
+        .matrix-cell.threshold-row {
+            border-top: 3px solid #000;
+        }
+
+        .matrix-header {
+            display: contents;
+        }
+
+        .matrix-header-cell {
+            height: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            color: #fff;
+        }
+
+        .matrix-cell:hover {
+            opacity: 0.8;
+        }
+
+        .matrix-axis-label {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            color: #fff;  /* White text for dark background */
+        }
+
+        .matrix-row-label {
+            width: 40px;
+            text-align: right;
+            padding-right: 8px;
+            font-size: 12px;
+            color: #fff;
+        }
+
+        .matrix-column-label {
+            height: 20px;
+            text-align: center;
+        }
+
+        .matrix-green { background-color: #008000; }
+        .matrix-blue { background-color: #00b7eb; }
+        .matrix-red { background-color: #ff0000; }
+        .matrix-white { background-color: #ffffff; }
+
+        /* Fix CPQRS controls centering */
+        #controls {
+            text-align: center;
+            margin: 20px 0;
+        }
+
+        /* Add a wrapper for the matrix view to help with centering */
+        #matrixView {
+            text-align: center;
+        }
+
+        /* CPQRS view container */
+        #cpqrsView {
+            text-align: center;
+            padding: 10px;
+        }
+
+        /* Adjust spacing between elements */
+        #nav-menu {
+            margin-bottom: 5px;
+        }
+
+        #month-menu {
+            margin: 5px 0;
+        }
+
+        #controls {
+            margin: 5px 0;
+        }
+
+        .layout-container {
+            margin-top: 5px;
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+        }
+
+        /* Restore letter container styles */
+        .letter-container {
+            display: none;
+            width: 600px;
+            height: 800px;
+        }
+
+        .letter-container.active {
+            display: block;
+        }
+
+        #display-container {
+            position: relative;
+            width: 600px;
+            height: 800px;
+        }
+
+        /* Keep stats panel styles */
+        #stats-panel {
+            background: #1a1a1a;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            width: 200px;
+        }
+
+        /* Update button styles for CPQRS view */
+        .nav-button,
+        .month-button,
+        .color-button,
+        .uncheck-button,
+        .reset-button {
+            padding: 4px 8px;  /* Reduced padding */
+            margin: 0 2px;     /* Reduced margin */
+            font-size: 12px;   /* Smaller font */
+            min-width: 60px;   /* Uniform width */
+            height: 24px;      /* Uniform height */
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+            font-weight: bold;
+            background-color: #333;  /* Only button has background */
+            color: white;
+            transition: background-color 0.2s;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            box-sizing: border-box;
+        }
+
+        .nav-button:hover,
+        .month-button:hover,
+        .color-button:hover,
+        .uncheck-button:hover,
+        .reset-button:hover {
+            background-color: #444;
+        }
+
+        .nav-button.active,
+        .month-button.active,
+        .color-button.active {
+            background-color: #555;
+            box-shadow: 0 0 5px rgba(255,255,255,0.2);
+        }
+
+        /* Specific button colors */
+        .color-button[data-color="#008000"] { background-color: #008000; }
+        .color-button[data-color="#00b7eb"] { background-color: #00b7eb; }
+        .color-button[data-color="#ff0000"] { background-color: #ff0000; }
+        .uncheck-button { background-color: #666; }
+        .reset-button { background-color: #ff4444; }
+
+        /* Adjust menu containers to be more compact */
+        #nav-menu,
+        #month-menu,
+        #controls {
+            margin: 3px 0;
+            line-height: 1;
+            background: none;  /* Remove any background */
+            padding: 0;        /* Remove any padding */
+        }
+
+        /* Add styles for axis labels */
+        .axis-label {
+            color: #fff;
+            font-size: 14px;
+            font-weight: bold;
+            margin: 5px 0;
+        }
+
+        .y-axis-label {
+            writing-mode: vertical-rl;
+            transform: rotate(180deg);
+            text-align: center;
+            position: absolute;
+            left: -30px;  /* Moved closer to the matrix */
+            top: 35%;     /* Moved up from center */
+            transform: rotate(180deg) translateY(-50%);
+            color: #fff;
+            font-size: 14px;
+            font-weight: bold;
+            white-space: nowrap;
+        }
+
+        .x-axis-label {
+            text-align: center;
+            margin-top: 25px;  /* Increased to account for day labels */
+            color: #fff;
+            font-size: 14px;
+            font-weight: bold;
+        }
+
+        /* Add month menu styles for matrix view */
+        .matrix-month-menu {
+            margin: 20px 0;
+            text-align: center;
+        }
+
+        .matrix-month-button {
+            padding: 8px 16px;
+            margin: 0 5px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            background-color: #333;
+            color: white;
+            transition: background-color 0.2s;
+        }
+
+        .matrix-month-button:hover {
+            background-color: #444;
+        }
+
+        .matrix-month-button.active {
+            background-color: #555;
+            box-shadow: 0 0 5px rgba(255,255,255,0.2);
+        }
+
+        /* Add styles for monthly results table */
+        .monthly-results {
+            margin-top: 20px;
+            width: 100%;
+            border-collapse: collapse;
+            color: #fff;
+        }
+
+        .monthly-results th,
+        .monthly-results td {
+            padding: 8px;
+            text-align: center;
+            border: 1px solid #444;
+            background-color: #1a1a1a;
+        }
+
+        .monthly-results th {
+            font-weight: bold;
+            background-color: #333;
+        }
+
+        .monthly-results td.month-label {
+            font-weight: bold;
+            background-color: #333;
+        }
+
+        .monthly-results td.total-value {
+            font-weight: bold;
+        }
+
+        /* Update styles for current month indicator */
+        .current-month-indicator {
+            position: absolute;
+            top: -30px;
+            left: 20px;
+            color: #00b7eb;
+            font-size: 18px;
+            font-weight: bold;
+            text-transform: uppercase;
+            padding: 4px 12px;
+            background-color: rgba(26, 26, 26, 0.9);
+            border-radius: 4px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+            z-index: 10;
+            white-space: nowrap;  /* Keep month and year on same line */
+        }
+
+        .current-month-indicator .year {
+            margin-left: 8px;  /* Add space between month and year */
+            opacity: 0.8;      /* Slightly dim the year */
+        }
+
+        /* Add styles for day labels */
+        .matrix-day-label {
+            position: absolute;
+            bottom: -20px;  /* Position below the matrix cells */
+            font-size: 12px;
+            color: #fff;
+            text-align: center;
+            width: 30px;  /* Match cell width */
+            transform: translateX(-50%);  /* Center the label */
+        }
+
+        /* Update matrix button styles to be more compact */
+        .matrix-color-button,
+        .matrix-reset-button {
+            padding: 3px 8px;  /* Reduced padding */
+            margin: 0 2px;     /* Reduced margin */
+            font-size: 11px;   /* Smaller font */
+            min-width: 50px;   /* Reduced width */
+            height: 22px;      /* Reduced height */
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+            font-weight: bold;
+            background-color: #333;
+            color: white;
+            transition: background-color 0.2s;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            box-sizing: border-box;
+        }
+
+        /* Update matrix month button styles */
+        .matrix-month-button {
+            padding: 3px 6px;  /* Reduced padding */
+            margin: 0 1px;     /* Reduced margin */
+            font-size: 11px;   /* Smaller font */
+            min-width: 40px;   /* Reduced width */
+            height: 22px;      /* Reduced height */
+        }
+
+        /* Condense matrix layout */
+        .matrix-container {
+            padding: 15px 30px 15px 40px;  /* Reduced padding */
+        }
+
+        .matrix-wrapper {
+            margin-bottom: 25px;  /* Reduced from 30px */
+        }
+
+        .matrix-day-label {
+            bottom: -18px;  /* Moved up slightly */
+            font-size: 11px;  /* Smaller font */
+        }
+
+        .x-axis-label {
+            margin-top: 20px;  /* Reduced from 25px */
+            font-size: 13px;   /* Slightly smaller */
+        }
+
+        .y-axis-label {
+            font-size: 13px;   /* Slightly smaller */
+        }
+
+        /* Adjust matrix month menu spacing */
+        .matrix-month-menu {
+            margin: 10px 0;  /* Reduced from 20px */
+        }
+
+        /* Adjust matrix controls spacing */
+        .matrix-controls {
+            margin: 8px 0;  /* Reduced from 20px */
+        }
+
+        /* Adjust tally section spacing */
+        .tally-section {
+            margin-top: 5px;  /* Reduced spacing */
+        }
+
+        .tally-row {
+            margin-top: 5px;  /* Reduced from 10px */
+        }
+
+        .total-section {
+            margin-top: 5px;  /* Reduced from 10px */
+        }
+
+        /* Adjust monthly results table spacing */
+        .monthly-results {
+            margin-top: 10px;  /* Reduced from 20px */
+        }
+
+        .monthly-results th,
+        .monthly-results td {
+            padding: 4px 6px;  /* Reduced padding */
+            font-size: 11px;   /* Smaller font */
+        }
+
+        /* Update Matrix view button styles to match CPQRS */
+        .matrix-month-menu,
+        .matrix-controls {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 4px;
+            margin: 5px 0;
+            flex-wrap: wrap;
+        }
+
+        /* Unified button styles for Matrix view */
+        .matrix-month-button,
+        .matrix-color-button,
+        .matrix-reset-button {
+            padding: 3px 6px;
+            margin: 0;
+            font-size: 11px;
+            min-width: 40px;
+            height: 22px;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+            font-weight: bold;
+            background-color: #333;
+            color: white;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            box-sizing: border-box;
+        }
+
+        /* Month button specific styles */
+        .matrix-month-button {
+            min-width: 35px;
+        }
+
+        /* Color button specific styles */
+        .matrix-color-button {
+            min-width: 45px;
+            border: 1px solid transparent;
+        }
+
+        .matrix-color-button[data-color="green"] {
+            border-color: #008000;
+        }
+
+        .matrix-color-button[data-color="blue"] {
+            border-color: #00b7eb;
+        }
+
+        .matrix-color-button[data-color="red"] {
+            border-color: #ff0000;
+        }
+
+        .matrix-color-button[data-color="white"] {
+            border-color: #ffffff;
+        }
+
+        /* Active state for month buttons */
+        .matrix-month-button.active {
+            background-color: #555;
+            box-shadow: 0 0 5px rgba(255,255,255,0.2);
+        }
+
+        /* Active state for color buttons */
+        .matrix-color-button[data-color="green"].active {
+            background-color: #008000;
+            box-shadow: 0 0 8px rgba(0, 128, 0, 0.5);
+        }
+
+        .matrix-color-button[data-color="blue"].active {
+            background-color: #00b7eb;
+            box-shadow: 0 0 8px rgba(0, 183, 235, 0.5);
+        }
+
+        .matrix-color-button[data-color="red"].active {
+            background-color: #ff0000;
+            box-shadow: 0 0 8px rgba(255, 0, 0, 0.5);
+        }
+
+        .matrix-color-button[data-color="white"].active {
+            background-color: #ffffff;
+            color: #333;
+            box-shadow: 0 0 8px rgba(255, 255, 255, 0.5);
+        }
+
+        /* Reset button specific style */
+        .matrix-reset-button {
+            background-color: #ff4444;
+            min-width: 45px;
+        }
+
+        /* Hover states */
+        .matrix-month-button:hover,
+        .matrix-color-button:hover,
+        .matrix-reset-button:hover {
+            opacity: 0.9;
+            transform: translateY(-1px);
+        }
+
+        .matrix-color-button[data-color="green"]:hover {
+            background-color: #004d00;
+        }
+
+        .matrix-color-button[data-color="blue"]:hover {
+            background-color: #0088b3;
+        }
+
+        .matrix-color-button[data-color="red"]:hover {
+            background-color: #cc0000;
+        }
+
+        .matrix-color-button[data-color="white"]:hover {
+            background-color: #cccccc;
+            color: #333;
+        }
+
+        .matrix-reset-button:hover {
+            background-color: #ff6666;
+        }
+
+        /* Adjust container spacing */
+        .matrix-container {
+            padding: 12px 25px 12px 35px;  /* Slightly reduced padding */
+        }
+
+        /* Adjust month menu spacing */
+        .matrix-month-menu {
+            margin-bottom: 8px;  /* Reduced spacing */
+        }
+
+        /* Adjust controls spacing */
+        .matrix-controls {
+            margin-bottom: 8px;  /* Reduced spacing */
+        }
+    </style>
 </head>
 <body>
-    <div id="nav-menu">
-        <button class="nav-button" onclick="showLetter('C')">Cost</button>
-        <button class="nav-button" onclick="showLetter('P')">People</button>
-        <button class="nav-button" onclick="showLetter('Q')">Quality</button>
-        <button class="nav-button" onclick="showLetter('R')">Responsiveness</button>
-        <button class="nav-button" onclick="showLetter('S')">Safety</button>
-    </div>
+    <button class="view-toggle" id="viewToggle">Switch to Matrix View</button>
 
-    <!-- New month navigation menu -->
-    <div id="month-menu">
-        <button class="month-button" data-month="1">Jan</button>
-        <button class="month-button" data-month="2">Feb</button>
-        <button class="month-button" data-month="3">Mar</button>
-        <button class="month-button" data-month="4">Apr</button>
-        <button class="month-button" data-month="5">May</button>
-        <button class="month-button" data-month="6">Jun</button>
-        <button class="month-button" data-month="7">Jul</button>
-        <button class="month-button" data-month="8">Aug</button>
-        <button class="month-button" data-month="9">Sep</button>
-        <button class="month-button" data-month="10">Oct</button>
-        <button class="month-button" data-month="11">Nov</button>
-        <button class="month-button" data-month="12">Dec</button>
-    </div>
+    <!-- CPQRS View -->
+    <div id="cpqrsView" class="view-container active">
+        <div id="nav-menu">
+            <button class="nav-button" onclick="showLetter('C')">Cost</button>
+            <button class="nav-button" onclick="showLetter('P')">People</button>
+            <button class="nav-button" onclick="showLetter('Q')">Quality</button>
+            <button class="nav-button" onclick="showLetter('R')">Responsiveness</button>
+            <button class="nav-button" onclick="showLetter('S')">Safety</button>
+        </div>
 
-    <div id="controls">
-        <button class="color-button active" onclick="setColor('#008000')" data-color="#008000">Green</button>
-        <button class="color-button" onclick="setColor('#00b7eb')" data-color="#00b7eb">Blue</button>
-        <button class="color-button" onclick="setColor('#ff0000')" data-color="#ff0000">Red</button>
-        <button class="uncheck-button" onclick="setUncheck()">Uncheck</button>
-        <button class="reset-button" onclick="resetColors()">Reset</button>
-    </div>
+        <!-- New month navigation menu -->
+        <div id="month-menu">
+            <button class="month-button" data-month="1">Jan</button>
+            <button class="month-button" data-month="2">Feb</button>
+            <button class="month-button" data-month="3">Mar</button>
+            <button class="month-button" data-month="4">Apr</button>
+            <button class="month-button" data-month="5">May</button>
+            <button class="month-button" data-month="6">Jun</button>
+            <button class="month-button" data-month="7">Jul</button>
+            <button class="month-button" data-month="8">Aug</button>
+            <button class="month-button" data-month="9">Sep</button>
+            <button class="month-button" data-month="10">Oct</button>
+            <button class="month-button" data-month="11">Nov</button>
+            <button class="month-button" data-month="12">Dec</button>
+        </div>
 
-    <div class="layout-container">
-        <div id="stats-panel">
-            <h2>GOAL</h2>
-            <div class="stat-container">
-                <div class="stat-label">Achieved vs. Missed:</div>
-                <div id="color-ratio">0%</div>
-            </div>
-            
-            <!-- Add key section -->
-            <div class="key-section">
-                <h2>KEY</h2>
-                <div class="key-items">
-                    <div class="key-item">
-                        <span class="color-dot green"></span>
-                        <span class="key-text">Achieved</span>
-                    </div>
-                    <div class="key-item">
-                        <span class="color-dot blue"></span>
-                        <span class="key-text">Unscheduled</span>
-                    </div>
-                    <div class="key-item">
-                        <span class="color-dot red"></span>
-                        <span class="key-text">Missed</span>
+        <div id="controls">
+            <button class="color-button active" onclick="setColor('#008000')" data-color="#008000">Green</button>
+            <button class="color-button" onclick="setColor('#00b7eb')" data-color="#00b7eb">Blue</button>
+            <button class="color-button" onclick="setColor('#ff0000')" data-color="#ff0000">Red</button>
+            <button class="uncheck-button" onclick="setUncheck()">Uncheck</button>
+            <button class="reset-button" onclick="resetColors()">Reset</button>
+        </div>
+
+        <div class="layout-container">
+            <div id="stats-panel">
+                <h2>GOAL</h2>
+                <div class="stat-container">
+                    <div class="stat-label">Achieved vs. Missed:</div>
+                    <div id="color-ratio">0%</div>
+                </div>
+                
+                <!-- Add key section -->
+                <div class="key-section">
+                    <h2>KEY</h2>
+                    <div class="key-items">
+                        <div class="key-item">
+                            <span class="color-dot green"></span>
+                            <span class="key-text">Achieved</span>
+                        </div>
+                        <div class="key-item">
+                            <span class="color-dot blue"></span>
+                            <span class="key-text">Unscheduled</span>
+                        </div>
+                        <div class="key-item">
+                            <span class="color-dot red"></span>
+                            <span class="key-text">Missed</span>
+                        </div>
                     </div>
                 </div>
             </div>
+            
+            <div id="display-container">
+                <div id="C-container" class="letter-container">
+                    <svg width="100%" height="100%" viewBox="0 0 600 800"></svg>
+                </div>
+                <div id="P-container" class="letter-container">
+                    <svg width="100%" height="100%" viewBox="0 0 600 800"></svg>
+                </div>
+                <div id="Q-container" class="letter-container">
+                    <svg width="100%" height="100%" viewBox="0 0 600 800"></svg>
+                </div>
+                <div id="R-container" class="letter-container">
+                    <svg width="100%" height="100%" viewBox="0 0 600 800"></svg>
+                </div>
+                <div id="S-container" class="letter-container">
+                    <svg width="100%" height="100%" viewBox="0 0 600 800"></svg>
+                </div>
+            </div>
         </div>
-        
-        <div id="display-container">
-            <div id="C-container" class="letter-container">
-                <svg width="100%" height="100%" viewBox="0 0 600 800"></svg>
+    </div>
+
+    <!-- Matrix View -->
+    <div id="matrixView" class="view-container">
+        <!-- Add month menu -->
+        <div class="matrix-month-menu">
+            <button class="matrix-month-button" data-month="1">Jan</button>
+            <button class="matrix-month-button" data-month="2">Feb</button>
+            <button class="matrix-month-button" data-month="3">Mar</button>
+            <button class="matrix-month-button" data-month="4">Apr</button>
+            <button class="matrix-month-button" data-month="5">May</button>
+            <button class="matrix-month-button" data-month="6">Jun</button>
+            <button class="matrix-month-button" data-month="7">Jul</button>
+            <button class="matrix-month-button" data-month="8">Aug</button>
+            <button class="matrix-month-button" data-month="9">Sep</button>
+            <button class="matrix-month-button" data-month="10">Oct</button>
+            <button class="matrix-month-button" data-month="11">Nov</button>
+            <button class="matrix-month-button" data-month="12">Dec</button>
+        </div>
+
+        <div class="matrix-controls">
+            <button class="matrix-color-button active" data-color="green">Green</button>
+            <button class="matrix-color-button" data-color="blue">Blue</button>
+            <button class="matrix-color-button" data-color="red">Red</button>
+            <button class="matrix-color-button" data-color="white">Uncheck</button>
+            <button class="matrix-reset-button" id="matrixReset">Reset</button>
+        </div>
+
+        <div class="matrix-container">
+            <!-- Add current month indicator -->
+            <div class="current-month-indicator" id="currentMonthIndicator">January</div>
+            <div class="matrix-wrapper">
+                <div class="axis-label y-axis-label">Quantity</div>
+                <div class="matrix" id="matrix"></div>
             </div>
-            <div id="P-container" class="letter-container">
-                <svg width="100%" height="100%" viewBox="0 0 600 800"></svg>
-            </div>
-            <div id="Q-container" class="letter-container">
-                <svg width="100%" height="100%" viewBox="0 0 600 800"></svg>
-            </div>
-            <div id="R-container" class="letter-container">
-                <svg width="100%" height="100%" viewBox="0 0 600 800"></svg>
-            </div>
-            <div id="S-container" class="letter-container">
-                <svg width="100%" height="100%" viewBox="0 0 600 800"></svg>
+            <div class="axis-label x-axis-label">Day of the Month</div>
+            <div class="tally-section">
+                <div class="tally-row">
+                    <div class="tally-cells-container" id="tallyCells">
+                        <!-- Tally cells will be added by JavaScript -->
+                    </div>
+                </div>
+                <div class="total-section">
+                    <div class="total-cell" id="totalCell">0</div>
+                    <div class="total-label">Total</div>
+                </div>
+                <!-- Add monthly results table -->
+                <table class="monthly-results">
+                    <tr>
+                        <th>Monthly Results</th>
+                        <td class="month-label">Jan</td>
+                        <td class="month-label">Feb</td>
+                        <td class="month-label">Mar</td>
+                        <td class="month-label">Apr</td>
+                        <td class="month-label">May</td>
+                        <td class="month-label">Jun</td>
+                        <td class="month-label">Jul</td>
+                        <td class="month-label">Aug</td>
+                        <td class="month-label">Sep</td>
+                        <td class="month-label">Oct</td>
+                        <td class="month-label">Nov</td>
+                        <td class="month-label">Dec</td>
+                    </tr>
+                    <tr>
+                        <th>Total</th>
+                        <td class="total-value" data-month="1">0</td>
+                        <td class="total-value" data-month="2">0</td>
+                        <td class="total-value" data-month="3">0</td>
+                        <td class="total-value" data-month="4">0</td>
+                        <td class="total-value" data-month="5">0</td>
+                        <td class="total-value" data-month="6">0</td>
+                        <td class="total-value" data-month="7">0</td>
+                        <td class="total-value" data-month="8">0</td>
+                        <td class="total-value" data-month="9">0</td>
+                        <td class="total-value" data-month="10">0</td>
+                        <td class="total-value" data-month="11">0</td>
+                        <td class="total-value" data-month="12">0</td>
+                    </tr>
+                </table>
             </div>
         </div>
     </div>
 
     <script type="module" src="js/main.js"></script>
+    <script>
+        // Matrix state management
+        const matrixState = {
+            currentMonth: new Date().getMonth() + 1,
+
+            // Get storage key for a specific cell
+            getStorageKey(row, col) {
+                return `matrix-${row}-${col}-${this.currentMonth}`;
+            },
+
+            // Save a single cell's state
+            saveCellState(row, col, color) {
+                const key = this.getStorageKey(row, col);
+                localStorage.setItem(key, color);
+            },
+
+            // Get a cell's saved state
+            getCellState(row, col) {
+                const key = this.getStorageKey(row, col);
+                return localStorage.getItem(key) || 'white';
+            },
+
+            // Calculate total for a specific month
+            calculateMonthTotal(month) {
+                let total = 0;
+                const columnTotals = new Array(31).fill(0);
+
+                // Load this month's state from localStorage
+                for (let row = 10; row >= 0; row--) {
+                    for (let col = 1; col <= 31; col++) {
+                        const key = `matrix-${row}-${col}-${month}`;
+                        const savedColor = localStorage.getItem(key) || 'white';
+                        
+                        // Count colored cells (excluding white)
+                        if (savedColor !== 'white') {
+                            columnTotals[col - 1]++; // Convert to 0-based index
+                        }
+                    }
+                }
+
+                // Calculate total (subtracting 1 from each column)
+                columnTotals.forEach(count => {
+                    total += Math.max(0, count - 1);
+                });
+
+                return total;
+            },
+
+            // Update monthly results table
+            updateMonthlyResults() {
+                // Update all months' totals
+                for (let month = 1; month <= 12; month++) {
+                    const monthTotal = this.calculateMonthTotal(month);
+                    document.querySelector(`.total-value[data-month="${month}"]`).textContent = monthTotal;
+                }
+            },
+
+            // Update current month indicator
+            updateMonthIndicator(month) {
+                const monthNames = [
+                    'January', 'February', 'March', 'April', 'May', 'June',
+                    'July', 'August', 'September', 'October', 'November', 'December'
+                ];
+                const currentYear = new Date().getFullYear();
+                const indicator = document.getElementById('currentMonthIndicator');
+                if (indicator) {
+                    indicator.innerHTML = `${monthNames[month - 1]} <span class="year">${currentYear}</span>`;
+                }
+            },
+
+            // Modified loadState to update month indicator
+            loadState(month) {
+                this.currentMonth = month;
+                this.updateMonthIndicator(month);  // Update the indicator
+                const matrix = document.getElementById('matrix');
+                const cells = matrix.querySelectorAll('.matrix-cell');
+                
+                // Reset all cells first
+                cells.forEach(cell => {
+                    cell.className = 'matrix-cell matrix-white';
+                    if (parseInt(cell.dataset.row) === 3) {
+                        cell.classList.add('threshold-row');
+                    }
+                });
+
+                // Load saved states for current month
+                cells.forEach(cell => {
+                    const row = cell.dataset.row;
+                    const col = cell.dataset.col;
+                    const savedColor = this.getCellState(row, col);
+                    
+                    // Remove all color classes
+                    cell.classList.remove('matrix-green', 'matrix-blue', 'matrix-red', 'matrix-white');
+                    // Add the saved color class
+                    cell.classList.add(`matrix-${savedColor}`);
+                    // Maintain threshold row styling
+                    if (parseInt(row) === 3) {
+                        cell.classList.add('threshold-row');
+                    }
+                });
+
+                // Update totals and monthly results
+                if (typeof updateColumnTotals === 'function') {
+                    updateColumnTotals();
+                }
+                this.updateMonthlyResults();
+            }
+        };
+
+        // View switching logic
+        document.addEventListener('DOMContentLoaded', function() {
+            const viewToggle = document.getElementById('viewToggle');
+            const cpqrsView = document.getElementById('cpqrsView');
+            const matrixView = document.getElementById('matrixView');
+            let currentView = 'cpqrs';
+
+            viewToggle.addEventListener('click', function() {
+                if (currentView === 'cpqrs') {
+                    cpqrsView.classList.remove('active');
+                    matrixView.classList.add('active');
+                    viewToggle.textContent = 'Switch to CPQRS View';
+                    currentView = 'matrix';
+                    initializeMatrix(); // Initialize matrix when switching to it
+                } else {
+                    matrixView.classList.remove('active');
+                    cpqrsView.classList.add('active');
+                    viewToggle.textContent = 'Switch to Matrix View';
+                    currentView = 'cpqrs';
+                }
+            });
+
+            function initializeMatrix() {
+                const matrix = document.getElementById('matrix');
+                const tallyCells = document.getElementById('tallyCells');
+                const totalCell = document.getElementById('totalCell');
+                if (matrix.children.length > 0) return;
+
+                let selectedColor = 'green';
+                const colors = ['green', 'blue', 'red', 'white'];
+                let totalCells = 0;
+                let columnTotals = new Array(31).fill(0);
+
+                // Function to update column totals
+                window.updateColumnTotals = function() {
+                    columnTotals = new Array(31).fill(0);
+                    let grandTotal = 0;
+
+                    // Count colored cells in each column
+                    document.querySelectorAll('.matrix-cell').forEach(cell => {
+                        const col = parseInt(cell.dataset.col) - 1;  // Convert to 0-based index
+                        if (cell.classList.contains('matrix-green') || 
+                            cell.classList.contains('matrix-blue') || 
+                            cell.classList.contains('matrix-red')) {
+                            columnTotals[col]++;
+                        }
+                    });
+
+                    // Update tally cells and calculate grand total
+                    document.querySelectorAll('.tally-cell').forEach((cell, index) => {
+                        const adjustedTotal = Math.max(0, columnTotals[index] - 1);  // Subtract 1, minimum 0
+                        cell.textContent = adjustedTotal;
+                        grandTotal += adjustedTotal;
+                    });
+
+                    // Update total cell
+                    totalCell.textContent = grandTotal;
+                };
+
+                // Create tally cells first
+                for (let i = 1; i <= 31; i++) {
+                    const tallyCell = document.createElement('div');
+                    tallyCell.className = 'tally-cell';
+                    tallyCell.textContent = '0';
+                    tallyCell.dataset.column = i;
+                    tallyCells.appendChild(tallyCell);
+                }
+
+                // Create all matrix cells
+                for (let row = 10; row >= 0; row--) {
+                    const rowLabel = document.createElement('div');
+                    rowLabel.className = 'matrix-axis-label matrix-row-label';
+                    rowLabel.textContent = row;
+                    matrix.appendChild(rowLabel);
+
+                    for (let col = 1; col <= 31; col++) {
+                        const cell = document.createElement('div');
+                        cell.className = 'matrix-cell matrix-white';
+                        if (row === 3) {
+                            cell.classList.add('threshold-row');
+                        }
+                        cell.dataset.row = row;
+                        cell.dataset.col = col;
+                        totalCells++;
+
+                        // Add day label for the first row
+                        if (row === 10) {
+                            const dayLabel = document.createElement('div');
+                            dayLabel.className = 'matrix-day-label';
+                            dayLabel.textContent = col;
+                            dayLabel.style.left = `${40 + (col * 30) - 15}px`;  // Position relative to matrix
+                            matrix.appendChild(dayLabel);
+                        }
+
+                        cell.addEventListener('click', function() {
+                            colors.forEach(color => this.classList.remove(`matrix-${color}`));
+                            this.classList.add(`matrix-${selectedColor}`);
+                            matrixState.saveCellState(row, col, selectedColor);
+                            updateColumnTotals();
+                            matrixState.updateMonthlyResults(); // Update monthly results
+                        });
+
+                        matrix.appendChild(cell);
+                    }
+                }
+
+                // Color button functionality
+                document.querySelectorAll('.matrix-color-button').forEach(button => {
+                    button.addEventListener('click', function() {
+                        document.querySelectorAll('.matrix-color-button').forEach(btn => 
+                            btn.classList.remove('active'));
+                        this.classList.add('active');
+                        selectedColor = this.dataset.color;
+                    });
+                });
+
+                // Reset button functionality
+                document.getElementById('matrixReset').addEventListener('click', function() {
+                    document.querySelectorAll('.matrix-cell').forEach(cell => {
+                        const row = cell.dataset.row;
+                        const col = cell.dataset.col;
+                        colors.forEach(color => cell.classList.remove(`matrix-${color}`));
+                        cell.classList.add('matrix-white');
+                        if (parseInt(row) === 3) {
+                            cell.classList.add('threshold-row');
+                        }
+                        // Save reset state
+                        matrixState.saveCellState(row, col, 'white');
+                    });
+                    updateColumnTotals();
+                    matrixState.updateMonthlyResults(); // Update monthly results
+                });
+
+                // Month button functionality
+                document.querySelectorAll('.matrix-month-button').forEach(button => {
+                    button.addEventListener('click', function() {
+                        // Update active button
+                        document.querySelectorAll('.matrix-month-button').forEach(btn => 
+                            btn.classList.remove('active'));
+                        this.classList.add('active');
+                        
+                        // Load new month's state
+                        const month = parseInt(this.dataset.month);
+                        matrixState.loadState(month);
+                    });
+                });
+
+                // Set initial month button as active and update indicator
+                const currentMonth = new Date().getMonth() + 1;
+                document.querySelector(`.matrix-month-button[data-month="${currentMonth}"]`).classList.add('active');
+                matrixState.updateMonthIndicator(currentMonth);  // Set initial indicator
+                
+                // Load initial state
+                matrixState.loadState(currentMonth);
+            }
+        });
+    </script>
 </body>
 </html>
